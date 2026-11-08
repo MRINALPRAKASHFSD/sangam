@@ -330,6 +330,9 @@ begin
   select v_uid, t.id, t.id = any (coalesce(p_public_tag_ids, '{}'))
   from tags t where t.id = any (p_tag_ids) and (t.status = 'active' or t.created_by = v_uid)
   on conflict (user_id, tag_id) do update set is_public = excluded.is_public;
+  if (select count(*) from user_tags where user_id = v_uid) < 3 then
+    raise exception 'Pick at least 3 interests' using errcode = 'P0001';
+  end if;
 
   foreach v_purpose in array enum_range(null::public.consent_purpose) loop
     if p_consents ? v_purpose::text then
