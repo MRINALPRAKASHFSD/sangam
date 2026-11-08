@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Download, Lock, RotateCw, Send, SlidersHorizontal, Bookmark, CircleDashed, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMe, useUserId } from '@/app/auth'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
