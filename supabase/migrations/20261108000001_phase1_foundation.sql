@@ -472,6 +472,9 @@ begin
   select * into v_tag from tags where slug = v_slug;
   if v_tag.id is not null then
     if v_tag.status = 'banned' then raise exception 'This tag is not allowed' using errcode = 'P0001'; end if;
+    if v_tag.status = 'pending' and v_tag.created_by is distinct from v_uid then
+      raise exception 'That tag is awaiting review. Try again once it is approved.' using errcode = 'P0001';
+    end if;
     return v_tag;
   end if;
   insert into tags (slug, name, category_id, created_by, status)
