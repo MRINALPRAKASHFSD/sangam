@@ -388,7 +388,7 @@ begin
   return query
   with mine as (select ut.tag_id from user_tags ut where ut.user_id = v_uid),
   candidates as (
-    select p.id, p.username::text, p.display_name, p.bio, p.avatar_path
+    select p.id, p.username::text, p.display_name, case when p.is_private then null else p.bio end as bio, p.avatar_path
     from profiles p
     join user_preferences up on up.user_id = p.id
     where p.id <> v_uid
