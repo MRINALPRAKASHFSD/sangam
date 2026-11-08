@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+// A path like "/supabase" goes through the Vite dev proxy, so remote previews reach a local stack.
+const url = rawUrl?.startsWith('/') ? `${window.location.origin}${rawUrl}` : rawUrl
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
 if (!url || !anonKey) {

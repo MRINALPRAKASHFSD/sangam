@@ -13,6 +13,13 @@ const securityHeaders = {
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: { headers: securityHeaders, host: true, allowedHosts: true },
+  server: {
+    headers: securityHeaders,
+    host: true,
+    allowedHosts: true,
+    proxy: {
+      '/supabase': { target: process.env.SUPABASE_PROXY_TARGET ?? 'http://127.0.0.1:54321', changeOrigin: true, ws: true, rewrite: (p) => p.replace(/^\/supabase/, '') },
+    },
+  },
   preview: { headers: securityHeaders, host: true, allowedHosts: true },
 })
