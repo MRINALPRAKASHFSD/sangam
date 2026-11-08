@@ -83,9 +83,10 @@ export function useDeleteMedia() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (m: MediaAsset) => {
+      const { error: storageError } = await supabase.storage.from('media').remove([m.path, ...(m.thumb_path ? [m.thumb_path] : [])])
+      if (storageError) throw storageError
       const { error } = await supabase.from('media_assets').delete().eq('id', m.id)
       if (error) throw error
-      await supabase.storage.from('media').remove([m.path, ...(m.thumb_path ? [m.thumb_path] : [])])
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['gallery'] }),
   })
