@@ -51,6 +51,7 @@ export function CameraScreen() {
   const [recProgress, setRecProgress] = useState(0)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const micRef = useRef<MediaStreamTrack | null>(null)
+  const wantRecordingRef = useRef(false)
 
   const { data: filters = [] } = useFilters()
   const available = useMemo(() => filters.filter(isAvailable), [filters])
@@ -140,19 +141,22 @@ export function CameraScreen() {
   async function startRecording() {
     const c = canvasRef.current
     if (!c || status !== 'live') return
+    wantRecordingRef.current = true
     const mime = pickRecorderMime()
     if (mime === null || !('captureStream' in c)) { toast('Video recording is not supported in this browser', 'error'); return }
     const stream = c.captureStream(30)
-    if (!micRef.current || micRef.current.readyState === 'ended') micRef.current = await provider.requestMicrophone()
+    micRef.current = await provider.requestMicrophone()
     if (micRef.current) stream.addTrack(micRef.current)
     else toast('Recording without sound (microphone unavailable)', 'info')
 
     const poster = await makeThumb(c)
+    if (!wantRecordingRef.current) { releaseMic(); return }
     const rec = new MediaRecorder(stream, { mimeType: mime || undefined, videoBitsPerSecond: quality.videoBitrate })
     const chunks: Blob[] = []
     const started = performance.now()
     rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
     rec.onstop = () => {
+      releaseMic()
       const durationMs = Math.round(performance.now() - started)
       setRecording(false)
       setRecProgress(0)
@@ -170,7 +174,13 @@ export function CameraScreen() {
     }, 50)
   }
 
+  function releaseMic() {
+    micRef.current?.stop()
+    micRef.current = null
+  }
+
   function stopRecording() {
+    wantRecordingRef.current = false
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
   }
 
