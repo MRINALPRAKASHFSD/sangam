@@ -1,13 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Layers, Play, Trash2 } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
+import { useUserId } from '@/app/auth'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Sheet } from '@/components/ui/sheet'
-import { drafts, type Draft } from '@/lib/drafts'
+import { draftStore, type Draft } from '@/lib/drafts'
 
 export function DraftsSheet({ open, onOpenChange, onOpen }: { open: boolean; onOpenChange: (v: boolean) => void; onOpen: (d: Draft) => void }) {
   const qc = useQueryClient()
-  const { data = [] } = useQuery({ queryKey: ['drafts'], queryFn: drafts.list, enabled: open })
+  const uid = useUserId()
+  const drafts = useMemo(() => draftStore(uid!), [uid])
+  const { data = [] } = useQuery({ queryKey: ['drafts', uid], queryFn: drafts.list, enabled: open && !!uid })
   const urls = useMemo(() => new Map(data.map((d) => [d.id, URL.createObjectURL(d.thumb)])), [data])
   useEffect(() => () => urls.forEach((u) => URL.revokeObjectURL(u)), [urls])
 

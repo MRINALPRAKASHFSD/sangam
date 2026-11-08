@@ -1,10 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Download, Lock, RotateCw, Send, SlidersHorizontal, Bookmark, CircleDashed, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useMe } from '@/app/auth'
+import { useMe, useUserId } from '@/app/auth'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
-import { drafts } from '@/lib/drafts'
+import { draftStore } from '@/lib/drafts'
 import { encodeCanvas, extFor, qualityProfile } from '@/lib/media'
 import { cn, errorMessage } from '@/lib/utils'
 import { renderFrame } from '../filters/engine'
@@ -32,6 +33,9 @@ export function CapturePreview({ capture, onClose }: { capture: Capture; onClose
   const quality = qualityProfile(!!me?.prefs.low_data_mode)
   const save = useSaveMedia()
   const toast = useToast()
+  const qc = useQueryClient()
+  const uid = useUserId()
+  const drafts = useMemo(() => draftStore(uid!), [uid])
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [adj, setAdj] = useState<Adjust>(NEUTRAL)
   const [busy, setBusy] = useState<'draft' | null>(null)
@@ -62,7 +66,7 @@ export function CapturePreview({ capture, onClose }: { capture: Capture; onClose
     try {
       const c = await finalize()
       await save.mutateAsync(c)
-      if (capture.draftId) await drafts.remove(capture.draftId)
+      if (capture.draftId) { await drafts.remove(capture.draftId); qc.invalidateQueries({ queryKey: ['drafts'] }) }
       toast('Saved to your private gallery', 'success')
       onClose()
     } catch (e) {
@@ -75,6 +79,7 @@ export function CapturePreview({ capture, onClose }: { capture: Capture; onClose
     try {
       const c = await finalize()
       await drafts.put({ id: capture.draftId ?? crypto.randomUUID(), kind: c.kind, blob: c.blob, thumb: c.thumb, width: c.width, height: c.height, durationMs: c.durationMs, filterSlug: c.filterSlug, createdAt: Date.now() })
+      qc.invalidateQueries({ queryKey: ['drafts'] })
       toast('Draft saved on this device', 'success')
       onClose()
     } catch (e) {
