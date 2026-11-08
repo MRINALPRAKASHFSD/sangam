@@ -6,6 +6,7 @@ import { useMe, useUserId } from '@/app/auth'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import { draftStore } from '@/lib/drafts'
+import { useObjectUrl } from '@/lib/use-object-url'
 import { encodeCanvas, extFor, qualityProfile } from '@/lib/media'
 import { cn, errorMessage } from '@/lib/utils'
 import { renderFrame } from '../filters/engine'
@@ -27,8 +28,7 @@ const NEUTRAL: Adjust = { brightness: 100, contrast: 100, saturate: 100, rotate:
 const adjustCss = (a: Adjust) => `brightness(${a.brightness}%) contrast(${a.contrast}%) saturate(${a.saturate}%)`
 
 export function CapturePreview({ capture, onClose }: { capture: Capture; onClose: () => void }) {
-  const url = useMemo(() => URL.createObjectURL(capture.blob), [capture.blob])
-  useEffect(() => () => URL.revokeObjectURL(url), [url])
+  const url = useObjectUrl(capture.blob)
   const { data: me } = useMe()
   const quality = qualityProfile(!!me?.prefs.low_data_mode)
   const save = useSaveMedia()

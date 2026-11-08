@@ -1,18 +1,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Layers, Play, Trash2 } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useUserId } from '@/app/auth'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Sheet } from '@/components/ui/sheet'
 import { draftStore, type Draft } from '@/lib/drafts'
+import { useObjectUrl } from '@/lib/use-object-url'
 
 export function DraftsSheet({ open, onOpenChange, onOpen }: { open: boolean; onOpenChange: (v: boolean) => void; onOpen: (d: Draft) => void }) {
   const qc = useQueryClient()
   const uid = useUserId()
   const drafts = useMemo(() => draftStore(uid!), [uid])
   const { data = [] } = useQuery({ queryKey: ['drafts', uid], queryFn: drafts.list, enabled: open && !!uid })
-  const urls = useMemo(() => new Map(data.map((d) => [d.id, URL.createObjectURL(d.thumb)])), [data])
-  useEffect(() => () => urls.forEach((u) => URL.revokeObjectURL(u)), [urls])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Drafts" description="Stored only on this device">
@@ -23,7 +22,7 @@ export function DraftsSheet({ open, onOpenChange, onOpen }: { open: boolean; onO
           {data.map((d) => (
             <div key={d.id} className="group relative aspect-[9/16] overflow-hidden rounded-2xl bg-elevated">
               <button className="size-full" onClick={() => onOpen(d)} aria-label="Open draft">
-                <img src={urls.get(d.id)} alt="" className="size-full object-cover" />
+                <DraftThumb blob={d.thumb} />
                 {d.kind === 'video' && <Play className="absolute top-2 left-2 size-4 fill-white text-white" />}
               </button>
               <button
@@ -39,4 +38,9 @@ export function DraftsSheet({ open, onOpenChange, onOpen }: { open: boolean; onO
       )}
     </Sheet>
   )
+}
+
+function DraftThumb({ blob }: { blob: Blob }) {
+  const url = useObjectUrl(blob)
+  return url ? <img src={url} alt="" className="size-full object-cover" /> : null
 }
